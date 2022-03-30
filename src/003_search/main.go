@@ -30,6 +30,7 @@ func main() {
 	}
 
 	// Add documents to the index.
+	// タブ
 	documents := strings.NewReader(`
 		{ "index":{ "_id" : "1" } }
 		{"tweet_text":"カレーが好き", "user_name":"三井"}
@@ -42,7 +43,8 @@ func main() {
 		{ "index":{ "_id" : "5" } }
 		{"tweet_text":"東京都は日本の首都である。", "user_name":"匿名"}
 		{ "index":{ "_id" : "6" } }
-		{"tweet_text":"京都は昔は日本の首都だった。", "user_name":"匿名"}`)
+		{"tweet_text":"京都は昔は日本の首都だった。", "user_name":"匿名"}
+`) // ここは改行入れないとエラーになるので注意。先頭にタブやスペースが入っても同様にエラー。
 
 	req := opensearchapi.BulkRequest{
 		Index: IndexName,
@@ -50,15 +52,15 @@ func main() {
 	}
 	bulkInsertResponse, err := req.Do(context.Background(), client)
 	if err != nil {
-		fmt.Println("failed to insert document ", err)
+		fmt.Println("failed to insert documents ", err)
 		os.Exit(1)
 	}
-	fmt.Println("### bulk insert document")
+	fmt.Println("### bulk insert documents")
 	fmt.Println(bulkInsertResponse)
 
 	// Search for the document.
 	content := strings.NewReader(`{
-	   "size": 5,
+	   "size": 10,
 	   "query": {
 			"match": {
 				"tweet_text": {
@@ -70,15 +72,16 @@ func main() {
 	}`)
 
 	search := opensearchapi.SearchRequest{
-		Body: content,
+		Index: []string{IndexName},
+		Body:  content,
 	}
 
 	searchResponse, err := search.Do(context.Background(), client)
 	if err != nil {
-		fmt.Println("failed to search document ", err)
+		fmt.Println("failed to search documents ", err)
 		os.Exit(1)
 	}
-	fmt.Println("### search document")
+	fmt.Println("### search documents")
 	fmt.Println(searchResponse)
 
 	// Delete documents.
@@ -88,7 +91,8 @@ func main() {
 		{ "delete":{ "_id" : "3" } }
 		{ "delete":{ "_id" : "4" } }
 		{ "delete":{ "_id" : "5" } }
-		{ "delete":{ "_id" : "6" } }`)
+		{ "delete":{ "_id" : "6" } }
+`) // ここは改行入れないとエラーになるので注意。先頭にタブやスペースが入っても同様にエラー。
 
 	deleteReq := opensearchapi.BulkRequest{
 		Index: IndexName,
@@ -96,9 +100,9 @@ func main() {
 	}
 	bulkDeleteResponse, err := deleteReq.Do(context.Background(), client)
 	if err != nil {
-		fmt.Println("failed to delete document ", err)
+		fmt.Println("failed to delete documents ", err)
 		os.Exit(1)
 	}
-	fmt.Println("### bulk delete document")
+	fmt.Println("### bulk delete documents")
 	fmt.Println(bulkDeleteResponse)
 }

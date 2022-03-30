@@ -35,19 +35,24 @@ func main() {
 
 	// Define index mapping.
 	mapping := strings.NewReader(`{
-     'settings': {
-       'index': {
-            'number_of_shards': 4
-            }
-          }
-     }`)
+		"settings": {
+			"index": {
+				"number_of_shards": 4
+			}
+		}
+	}`)
 
 	// Create an index with non-default settings.
-	res := opensearchapi.CreateRequest{
+	createIndex := opensearchapi.IndicesCreateRequest{
 		Index: IndexName,
 		Body:  mapping,
 	}
-	fmt.Println("creating index", res)
+	createIndexResponse, err := createIndex.Do(context.Background(), client)
+	if err != nil {
+		fmt.Println("failed to create index ", err)
+		os.Exit(1)
+	}
+	fmt.Println("creating index", createIndexResponse)
 
 	// Add a document to the index.
 	document := strings.NewReader(`{

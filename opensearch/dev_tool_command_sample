@@ -1,3 +1,6 @@
+# OpenSerch DashBoardのDevToolsで実行するコマンドのメモ
+# http://localhost:5601/app/dev_tools#/console
+
 # リセット用
 DELETE sample_index_ngram
 DELETE sample_index_kuromoji
@@ -134,17 +137,17 @@ GET sample_index_kuromoji/_analyze
 # データ登録
 # ngram(2-gram)
 POST sample_index_ngram/_bulk
-{ "index":{} }
+{ "index":{ "_id" : "1" } }
 {"tweet_text":"カレーが好き", "user_name":"三井"}
-{ "index":{} }
+{ "index":{"_id" : "2"} }
 {"tweet_text":"カツカレーが食べたい", "user_name":"三井"}
-{ "index":{} }
+{ "index":{"_id" : "3"} }
 {"tweet_text":"カツ丼が好き", "user_name":"匿名"}
-{ "index":{} }
+{ "index":{"_id" : "4"} }
 {"tweet_text":"秒速五㌢㍍で落ちているサーバー", "user_name":"匿名"}
-{ "index":{} }
+{ "index":{"_id" : "5"} }
 {"tweet_text":"東京都は日本の首都である。", "user_name":"匿名"}
-{ "index":{} }
+{ "index":{"_id" : "6"} }
 {"tweet_text":"京都は昔は日本の首都だった。", "user_name":"匿名"}
 
 # 形態素解析(kuromoji)
@@ -211,60 +214,3 @@ POST _plugins/_sql
 {
   "query": "SELECT user_name, COUNT(*) AS tweet_count FROM sample_index_kuromoji_custom GROUP BY user_name LIMIT 10"
 }
-
-
-
-
-# "吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。"
-
-
-
-GET opensearch_dashboards_sample_data_ecommerce
-
-GET _nodes/plugins
-
-GET /
-
-PUT /sample_index
-{
-  "mappings": {
-    "properties": {
-      "sample_field": {
-        "type": "integer",  
-        "index": false
-      }
-    }
-  }
-}
-
-GET _cat/indices
-
-GET /sample_index
-
-
-PUT /sample_index2
-{
-  "mappings": {
-    "properties": {
-      "sample_field": {
-        "type": "integer",  
-        "index": false
-      }
-    }
-  }
-}
-【目安】
-25:00 1p
-20:00 12p
-15:00 20p（できれば24p:Index設定）
-12:00 Dashboardに移動
-05:00 説明終了（目標）
-
-16:00 1p
-16:05 12p
-16:10 20p（できれば24p:Index設定）
-16:13 Dashboardに移動
-16:20 説明終了（目標）
-
-
-

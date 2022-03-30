@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -28,34 +29,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Print OpenSearch version information on console.
-	fmt.Println(client.Info())
-
 	// Define index mapping.
 	mapping := strings.NewReader(`{
-		'settings': {
-			'index': {
-				'number_of_shards': 3,
-				'number_of_replicas': 1
+		"settings": {
+			"index": {
+				"number_of_shards": 3,
+				"number_of_replicas": 1
 			}
 		},
-		'mappings': {
-			'properties': {
-				'tweet_text':{
-					'type': 'text',
-					'analyzer': 'kuromoji'
+		"mappings": {
+			"properties": {
+				"tweet_text":{
+					"type": "text",
+					"analyzer": "kuromoji"
 				},
-				'user_name':{
-					'type': 'keyword'
+				"user_name":{
+					"type": "keyword"
 				}
 			}
 		}
 	}`)
 
 	// Create an index with non-default settings.
-	res := opensearchapi.IndicesCreateRequest{
+	createIndex := opensearchapi.IndicesCreateRequest{
 		Index: IndexName,
 		Body:  mapping,
 	}
-	fmt.Println("creating index", res)
+	createIndexResponse, err := createIndex.Do(context.Background(), client)
+	if err != nil {
+		fmt.Println("failed to create index ", err)
+		os.Exit(1)
+	}
+	fmt.Println("creating index", createIndexResponse)
 }
