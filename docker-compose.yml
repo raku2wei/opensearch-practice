@@ -1,0 +1,53 @@
+version: '3.7'
+
+services:
+  main:
+    build: .
+    tty: true
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ./:${WORKDIR:-/src}
+    networks:
+      - sandbox
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    environment:
+      OPENSEARCH_HOSTS: "https://opensearch:9200"
+    ports:
+      - 5601:5601
+    links:
+      - opensearch
+    networks:
+      - sandbox
+
+  opensearch:
+    build:
+      context: .
+      dockerfile: ./opensearch/Dockerfile
+    container_name: opensearch
+    environment:
+      - cluster.name=docker-cluster
+      - node.name=os-node
+      - cluster.initial_master_nodes=os-node
+      - bootstrap.memory_lock=true
+      - http.host=0.0.0.0
+      - transport.host=127.0.0.1
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
+    volumes:
+      - openserch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - sandbox
+
+networks:
+  sandbox:
+volumes:
+  openserch-data:

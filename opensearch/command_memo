@@ -1,0 +1,270 @@
+# リセット用
+DELETE sample_index_ngram
+DELETE sample_index_kuromoji
+DELETE sample_index_kuromoji_custom
+
+
+# Index登録
+# 形態素解析用のIndex作成（設定もここで指定）
+# デフォルトで用意されているAnalyzer使用
+PUT sample_index_kuromoji
+{
+  "mappings": {
+    "properties": {
+      "tweet_text":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
+      "user_name":{
+        "type": "keyword"
+      }
+    }
+  }
+}
+
+# kuromojiの動作確認
+GET sample_index_kuromoji/_analyze
+{
+  "analyzer": "kuromoji",
+  "text" :  "カツカレーが食べたい!!!!"
+}
+
+# N-gram：2-gram(bi-gram)で定義
+# ngram_tokenizer：自分で定義したtokenizer
+# token_chars：対象の文字列の種類の設定
+# letter：文字、digit：数字、symbol：記号、punctuation：句読点
+PUT sample_index_ngram
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_ja_analyzer": {
+          "tokenizer": "2gram_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "2gram_tokenizer": {
+          "type": "ngram",
+          "min_gram": 2,
+          "max_gram": 2,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "tweet_text":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
+      "user_name":{
+        "type": "keyword"
+      }
+    }
+  }
+}
+# 2-gramの動作確認
+GET sample_index_ngram/_analyze
+{
+  "analyzer": "my_ja_analyzer",
+  "text" :  "カツカレーが食べたい！！！"
+}
+
+
+# 形態素解析の設定を自分で定義
+# icu_normalizer：文字の正規化 <例> ① → 1, ㌢ → センチ
+# kuromoji_baseform：単語を基本形に変換 <例> 食べたい → 食べる
+# kuromoji_part_of_speech：助詞などの削除 <例> が、を、に
+# ja_stop：頻出語句で、検索に有用でない言葉を除去 <例>それ、あれ、これ
+# kuromoji_number：漢数字を半角数字に変換 <例> 六三四 → 634
+# kuromoji_stemmer：長音の除去 <例>サーバー　→　サーバ
+PUT sample_index_kuromoji_custom
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_ja_analyzer": {
+          "type": "custom",
+          "char_filter":[
+                "icu_normalizer"
+          ],
+          "tokenizer": "kuromoji_tokenizer",
+          "filter": [
+            "kuromoji_baseform",
+            "kuromoji_part_of_speech",
+            "ja_stop",
+            "kuromoji_number",
+            "kuromoji_stemmer"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "tweet_text":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
+      "user_name":{
+        "type": "keyword"
+      }
+    }
+  }
+}
+# kuromojiカスタム設定
+GET sample_index_kuromoji_custom/_analyze
+{
+  "analyzer": "my_ja_analyzer",
+  "text" : "東京都は日本の首都である。"
+}
+
+# kuromojiデフォルト：文字の正規化等が行われない
+GET sample_index_kuromoji/_analyze
+{
+  "analyzer": "kuromoji",
+  "text" :  "秒速五㌢㍍で落ちているサーバー"
+}
+
+
+# データ登録
+# ngram(2-gram)
+POST sample_index_ngram/_bulk
+{ "index":{} }
+{"tweet_text":"カレーが好き", "user_name":"三井"}
+{ "index":{} }
+{"tweet_text":"カツカレーが食べたい", "user_name":"三井"}
+{ "index":{} }
+{"tweet_text":"カツ丼が好き", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"秒速五㌢㍍で落ちているサーバー", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"東京都は日本の首都である。", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"京都は昔は日本の首都だった。", "user_name":"匿名"}
+
+# 形態素解析(kuromoji)
+POST sample_index_kuromoji_custom/_bulk
+{ "index":{} }
+{"tweet_text":"カレーが好き", "user_name":"三井"}
+{ "index":{} }
+{"tweet_text":"カツカレーが食べたい", "user_name":"三井"}
+{ "index":{} }
+{"tweet_text":"カツ丼が好き", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"秒速五㌢㍍で落ちているサーバー", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"東京都は日本の首都である。", "user_name":"匿名"}
+{ "index":{} }
+{"tweet_text":"京都は昔は日本の首都だった。", "user_name":"匿名"}
+
+
+# 検索してみる
+# 検索キーワード例：カツカレー、京都
+# ngram(2-gram)
+GET sample_index_ngram/_search
+{
+  "query": {
+    "match": {
+      "tweet_text": {
+        "query": "カツカレー",
+        "operator": "and"
+      }
+    }
+  }
+}
+# 形態素解析(kuromoji)
+GET sample_index_kuromoji_custom/_search
+{
+  "query": {
+    "match": {
+      "tweet_text": {
+        "query": "京都",
+        "operator": "and"
+      }
+    }
+  }
+}
+
+# SQLクエリで検索
+# SELECT文
+POST _plugins/_sql
+{
+  "query": "SELECT * FROM sample_index_kuromoji_custom LIMIT 10"
+}
+# 特定のFieldのみ取得
+POST _plugins/_sql
+{
+  "query": "SELECT user_name FROM sample_index_kuromoji_custom LIMIT 10"
+}
+# 複数条件指定
+POST _plugins/_sql
+{
+  "query": "SELECT * FROM sample_index_kuromoji_custom WHERE tweet_text LIKE 'カツ' AND user_name = '三井' LIMIT 10"
+}
+# GROUP BYでカウント
+POST _plugins/_sql
+{
+  "query": "SELECT user_name, COUNT(*) AS tweet_count FROM sample_index_kuromoji_custom GROUP BY user_name LIMIT 10"
+}
+
+
+
+
+# "吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。"
+
+
+
+GET opensearch_dashboards_sample_data_ecommerce
+
+GET _nodes/plugins
+
+GET /
+
+PUT /sample_index
+{
+  "mappings": {
+    "properties": {
+      "sample_field": {
+        "type": "integer",  
+        "index": false
+      }
+    }
+  }
+}
+
+GET _cat/indices
+
+GET /sample_index
+
+
+PUT /sample_index2
+{
+  "mappings": {
+    "properties": {
+      "sample_field": {
+        "type": "integer",  
+        "index": false
+      }
+    }
+  }
+}
+【目安】
+25:00 1p
+20:00 12p
+15:00 20p（できれば24p:Index設定）
+12:00 Dashboardに移動
+05:00 説明終了（目標）
+
+16:00 1p
+16:05 12p
+16:10 20p（できれば24p:Index設定）
+16:13 Dashboardに移動
+16:20 説明終了（目標）
+
+
+
