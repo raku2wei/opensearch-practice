@@ -1,1 +1,1 @@
-# go-practice
+# opensearch-practice
